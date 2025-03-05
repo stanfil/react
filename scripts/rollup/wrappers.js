@@ -24,6 +24,7 @@ const {
   CJS_DTS,
   ESM_DTS,
 } = bundleTypes;
+const MagicString = require('magic-string');
 
 const {RECONCILER} = moduleTypes;
 
@@ -510,8 +511,12 @@ function wrapWithTopLevelDefinitions(
   globalName,
   filename,
   moduleType,
-  wrapWithModuleBoundaries
+  wrapWithModuleBoundaries,
+  sourceMap
 ) {
+  let processedSource = source;
+  let map = sourceMap;
+  console.log('>>>', bundleType)
   if (wrapWithModuleBoundaries) {
     switch (bundleType) {
       case NODE_DEV:
@@ -525,11 +530,21 @@ function wrapWithTopLevelDefinitions(
         // Remove the 'use strict' directive from source.
         // The module start wrapper will add its own.
         // This directive is only meaningful when it is the first statement in a file or function.
-        source = source.replace(USE_STRICT_HEADER_REGEX, '');
+        processedSource = processedSource.replace(USE_STRICT_HEADER_REGEX, '');
 
         // Certain DEV and Profiling bundles should self-register their own module boundaries with DevTools.
         // This allows the Timeline to de-emphasize (dim) internal stack frames.
-        source = wrapWithRegisterInternalModule(source);
+        const magicString = new MagicString(processedSource, {
+          filename,
+          sourcemap: map
+        });
+        const wrappedSource = wrapWithRegisterInternalModule(processedSource);
+        magicString.overwrite(0, processedSource.length, wrappedSource);
+        processedSource = magicString.toString();
+        map = magicString.generateMap({
+          hires: true,
+          includeContent: true
+        });
         break;
     }
   }
@@ -537,7 +552,10 @@ function wrapWithTopLevelDefinitions(
   if (bundleType === BROWSER_SCRIPT) {
     // Bundles of type BROWSER_SCRIPT get sent straight to the browser without
     // additional processing. So we should exclude any extra wrapper comments.
-    return source;
+    return {
+      code: processedSource,
+      map
+    };
   }
 
   if (moduleType === RECONCILER) {
@@ -550,7 +568,19 @@ function wrapWithTopLevelDefinitions(
       );
     }
 
-    return wrapper(source, globalName, filename, moduleType);
+    const magicString = new MagicString(processedSource, {
+      filename,
+      sourcemap: map
+    });
+    const wrappedSource = wrapper(processedSource, globalName, filename, moduleType);
+    magicString.overwrite(0, processedSource.length, wrappedSource);
+    return {
+      code: magicString.toString(),
+      map: magicString.generateMap({
+        hires: true,
+        includeContent: true
+      })
+    };
   }
 
   // All the other packages.
@@ -559,7 +589,19 @@ function wrapWithTopLevelDefinitions(
     throw new Error(`Unsupported build type: ${bundleType}.`);
   }
 
-  return wrapper(source, globalName, filename, moduleType);
+  const magicString = new MagicString(processedSource, {
+    filename,
+    sourcemap: map
+  });
+  const wrappedSource = wrapper(processedSource, globalName, filename, moduleType);
+  magicString.overwrite(0, processedSource.length, wrappedSource);
+  return {
+    code: magicString.toString(),
+    map: magicString.generateMap({
+      hires: true,
+      includeContent: true
+    })
+  };
 }
 
 function wrapWithLicenseHeader(

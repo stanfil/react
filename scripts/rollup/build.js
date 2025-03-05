@@ -214,7 +214,7 @@ function getRollupOutputOptions(
     freeze: !isProduction,
     interop: getRollupInteropValue,
     name: globalName,
-    sourcemap: false,
+    sourcemap: true,
     esModule: false,
     exports: 'auto',
   };
@@ -415,12 +415,12 @@ function getPlugins(
         )
       ),
       // Remove 'use strict' from individual source files.
-      {
-        name: "remove 'use strict'",
-        transform(source) {
-          return source.replace(/['"]use strict["']/g, '');
-        },
-      },
+      // {
+      //   name: "remove 'use strict'",
+      //   transform(source) {
+      //     return source.replace(/['"]use strict["']/g, '');
+      //   },
+      // },
       // Turn __DEV__ and process.env checks into constants.
       replace({
         preventAssignment: true,
@@ -433,19 +433,20 @@ function getPlugins(
           __EXPERIMENTAL__,
         },
       }),
-      {
-        name: 'top-level-definitions',
-        renderChunk(source) {
-          return Wrappers.wrapWithTopLevelDefinitions(
-            source,
-            bundleType,
-            globalName,
-            filename,
-            moduleType,
-            bundle.wrapWithModuleBoundaries
-          );
-        },
-      },
+      // {
+      //   name: 'top-level-definitions',        
+      //   renderChunk(source, chunk, outputOptions) {
+      //     return Wrappers.wrapWithTopLevelDefinitions(
+      //       source,
+      //       bundleType,
+      //       globalName,
+      //       filename,
+      //       moduleType,
+      //       bundle.wrapWithModuleBoundaries,
+      //       chunk.map,
+      //     );
+      //   },
+      // },
       // For production builds, compile with Closure. We do this even for the
       // "non-minified" production builds because Closure is much better at
       // minification than what most applications use. During this step, we do
@@ -457,58 +458,58 @@ function getPlugins(
       // We don't bother with sourcemaps at this step. The sourcemaps we publish
       // are only for whitespace and symbol renaming; they don't map back to
       // before Closure was applied.
-      needsMinifiedByClosure &&
-        closure({
-          compilation_level: 'SIMPLE',
-          language_in: 'ECMASCRIPT_2020',
-          language_out:
-            bundleType === NODE_ES2015
-              ? 'ECMASCRIPT_2020'
-              : bundleType === BROWSER_SCRIPT
-                ? 'ECMASCRIPT5'
-                : 'ECMASCRIPT5_STRICT',
-          emit_use_strict:
-            bundleType !== BROWSER_SCRIPT &&
-            bundleType !== ESM_PROD &&
-            bundleType !== ESM_DEV,
-          env: 'CUSTOM',
-          warning_level: 'QUIET',
-          source_map_include_content: true,
-          use_types_for_optimization: false,
-          process_common_js_modules: false,
-          rewrite_polyfills: false,
-          inject_libraries: false,
-          allow_dynamic_import: true,
+      // needsMinifiedByClosure &&
+      //   closure({
+      //     compilation_level: 'SIMPLE',
+      //     language_in: 'ECMASCRIPT_2020',
+      //     language_out:
+      //       bundleType === NODE_ES2015
+      //         ? 'ECMASCRIPT_2020'
+      //         : bundleType === BROWSER_SCRIPT
+      //           ? 'ECMASCRIPT5'
+      //           : 'ECMASCRIPT5_STRICT',
+      //     emit_use_strict:
+      //       bundleType !== BROWSER_SCRIPT &&
+      //       bundleType !== ESM_PROD &&
+      //       bundleType !== ESM_DEV,
+      //     env: 'CUSTOM',
+      //     warning_level: 'QUIET',
+      //     source_map_include_content: true,
+      //     use_types_for_optimization: false,
+      //     process_common_js_modules: false,
+      //     rewrite_polyfills: false,
+      //     inject_libraries: false,
+      //     allow_dynamic_import: true,
 
-          // Don't let it create global variables in the browser.
-          // https://github.com/facebook/react/issues/10909
-          assume_function_wrapper: true,
+      //     // Don't let it create global variables in the browser.
+      //     // https://github.com/facebook/react/issues/10909
+      //     assume_function_wrapper: true,
 
-          // Don't rename symbols (variable names, functions, etc). We leave
-          // this up to the application to handle, if they want. Otherwise gzip
-          // takes care of it.
-          renaming: false,
-        }),
-      needsMinifiedByClosure &&
-        // Add the whitespace back
-        prettier({
-          parser: 'flow',
-          singleQuote: false,
-          trailingComma: 'none',
-          bracketSpacing: true,
-        }),
-      {
-        name: 'license-and-signature-header',
-        renderChunk(source) {
-          return Wrappers.wrapWithLicenseHeader(
-            source,
-            bundleType,
-            globalName,
-            filename,
-            moduleType
-          );
-        },
-      },
+      //     // Don't rename symbols (variable names, functions, etc). We leave
+      //     // this up to the application to handle, if they want. Otherwise gzip
+      //     // takes care of it.
+      //     renaming: false,
+      //   }),
+      // needsMinifiedByClosure &&
+      //   // Add the whitespace back
+      //   prettier({
+      //     parser: 'flow',
+      //     singleQuote: false,
+      //     trailingComma: 'none',
+      //     bracketSpacing: true,
+      //   }),
+      // {
+      //   name: 'license-and-signature-header',
+      //   renderChunk(source) {
+      //     return Wrappers.wrapWithLicenseHeader(
+      //       source,
+      //       bundleType,
+      //       globalName,
+      //       filename,
+      //       moduleType
+      //     );
+      //   },
+      // },
       // Record bundle size.
       sizes({
         getSize: (size, gzip) => {

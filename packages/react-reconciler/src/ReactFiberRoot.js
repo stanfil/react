@@ -142,7 +142,6 @@ function FiberRootNode(
     }
   }
 }
-
 export function createFiberRoot(
   containerInfo: Container,
   tag: RootTag,
@@ -174,6 +173,7 @@ export function createFiberRoot(
   formState: ReactFormState<any, any> | null,
 ): FiberRoot {
   // $FlowFixMe[invalid-constructor] Flow no longer supports calling new on functions
+  // 创建FiberRootNode实例作为整个React应用的根节点
   const root: FiberRoot = (new FiberRootNode(
     containerInfo,
     tag,
@@ -184,17 +184,23 @@ export function createFiberRoot(
     onRecoverableError,
     formState,
   ): any);
+
+  // 如果启用了Suspense回调,设置hydrationCallbacks
   if (enableSuspenseCallback) {
     root.hydrationCallbacks = hydrationCallbacks;
   }
 
+  // 如果启用了Transition追踪,设置transitionCallbacks
   if (enableTransitionTracing) {
     root.transitionCallbacks = transitionCallbacks;
   }
 
   // Cyclic construction. This cheats the type system right now because
   // stateNode is any.
+  // 创建未初始化的hostRootFiber,作为FiberRoot的current指针
   const uninitializedFiber = createHostRootFiber(tag, isStrictMode);
+
+  // 建立FiberRoot和RootFiber的关联
   root.current = uninitializedFiber;
   uninitializedFiber.stateNode = root;
 
@@ -210,6 +216,7 @@ export function createFiberRoot(
   // retained separately.
   root.pooledCache = initialCache;
   retainCache(initialCache);
+  // 设置RootFiber的初始状态
   const initialState: RootState = {
     element: initialChildren,
     isDehydrated: hydrate,
@@ -217,6 +224,7 @@ export function createFiberRoot(
   };
   uninitializedFiber.memoizedState = initialState;
 
+  // 初始化更新队列
   initializeUpdateQueue(uninitializedFiber);
 
   return root;

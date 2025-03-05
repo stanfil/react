@@ -222,6 +222,7 @@ export function createRoot(
     }
   }
 
+  // 1. 创建容器
   const root = createContainer(
     container,
     ConcurrentRoot,
@@ -240,9 +241,12 @@ export function createRoot(
     !disableCommentsAsDOMContainers && container.nodeType === COMMENT_NODE
       ? (container.parentNode: any)
       : container;
+
+  // 2. 监听事件
   listenToAllSupportedEvents(rootContainerElement);
 
   // $FlowFixMe[invalid-constructor] Flow no longer supports calling new on functions
+  // 3. 返回root，后续调用 render
   return new ReactDOMRoot(root);
 }
 

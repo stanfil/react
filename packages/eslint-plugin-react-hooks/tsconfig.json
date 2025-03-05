@@ -6,7 +6,7 @@
     "moduleResolution": "Bundler",
     "lib": ["ES2020"],
     "rootDir": ".",
-    "sourceMap": false,
+    "sourceMap": true,
     "types": ["estree-jsx", "node"],
     "downlevelIteration": true
   },
